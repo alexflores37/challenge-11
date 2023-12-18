@@ -181,3 +181,55 @@ if (window.location.pathname === '/notes') {
 }
 
 getAndRenderNotes();
+
+const express = require('express');
+const fs = require('fs');
+const path = require('path');
+
+const app = express();
+const port = 3000;
+
+app.use(express.json());
+
+// Load existing notes from db.json
+let dbPath = path.join(__dirname, 'db.json');
+let db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
+
+app.get('/notes', (req, res) => {
+  const notesHtmlPath = path.join(__dirname, 'notes.html');
+
+  fs.readFile(notesHtmlPath, 'utf8', (err, data) => {
+    if (err) {
+      console.error(err);
+      return res.status(500).send('Internal Server Error');
+    }
+
+    res.send(data);
+  });
+});
+
+// API endpoint to get all notes
+app.get('/api/notes', (req, res) => {
+  res.json(db.notes);
+});
+
+// API endpoint to create a new note
+app.post('/api/notes', (req, res) => {
+  const newNote = req.body;
+
+  // Assign a unique ID to the new note
+  newNote.id = db.notes.length + 1;
+
+  // Add the new note to the array
+  db.notes.push(newNote);
+
+  // Update db.json file
+  fs.writeFileSync(dbPath, JSON.stringify(db, null, 2));
+
+  res.json(newNote);
+});
+
+app.listen(port, () => {
+  console.log(`Server is running at http://localhost:${port}`);
+});
+
